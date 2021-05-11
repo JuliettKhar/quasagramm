@@ -1,12 +1,13 @@
 <template>
   <q-page class="container-camera q-pa-md">
     <div class="camera-frame q-pa-md">
-      <video
-        ref="video"
+      <video ref="video" class="full-width" autoplay v-show="!imageCaptured" />
+      <canvas
+        ref="canvas"
         class="full-width"
-        autoplay
-        v-show="!imageCaptured"/>
-      <canvas ref="canvas" class="full-width" height="240" v-show="imageCaptured"/>
+        height="240"
+        v-show="imageCaptured"
+      />
     </div>
     <div class="text-center q-pa-md">
       <q-btn
@@ -29,17 +30,35 @@
         </template>
       </q-file>
       <div class="row justify-center q-pa-md">
-        <q-input v-model="post.caption" label="Caption" class="col col-sm-6" dense/>
+        <q-input
+          v-model="post.caption"
+          label="Caption"
+          class="col col-sm-6"
+          dense
+        />
       </div>
       <div class="row justify-center q-pa-md">
-        <q-input v-model="post.location" label="Location" class="col col-sm-6" dense>
+        <q-input
+          v-model="post.location"
+          label="Location"
+          class="col col-sm-6"
+          dense
+          :loading="locationLoading"
+        >
           <template v-slot:append>
-            <q-btn round dense flat icon="eva-navigation-2-outline" @click="getLocation"/>
+            <q-btn
+              v-if="!locationLoading && islocationSupported"
+              round
+              dense
+              flat
+              icon="eva-navigation-2-outline"
+              @click="getLocation"
+            />
           </template>
         </q-input>
       </div>
       <div class="row justify-center q-mt-lg">
-        <q-btn rounded unelevated color="primary" label="Post image"/>
+        <q-btn rounded unelevated color="primary" label="Post image" />
       </div>
     </div>
   </q-page>
@@ -63,7 +82,13 @@ export default {
       },
       imageCaptured: false,
       hasCameraSupports: true,
-      imageUpload: []
+      imageUpload: [],
+      locationLoading: false
+    }
+  },
+  computed:{
+    islocationSupported() {
+      return navigator.geolocation ? true : false
     }
   },
   methods: {
@@ -133,18 +158,19 @@ export default {
       this.$refs.video.srcObject.getTracks().forEach(track => track.stop());
     },
     getLocation() {
+      this.locationLoading = true
       navigator.geolocation.getCurrentPosition(position => {
         this.getCityAndCountry(position)
       }, err => {
-          this.locationError(err);
-      }, { timeout: 7000 })
+        this.locationError(err);
+      }, {timeout: 7000})
     },
     getCityAndCountry(position) {
       const apiUrl = `https://geocode.xyz/${position.coords.latitude},${position.coords.longitude}?json=1`;
       this.$axios.get(apiUrl).then(res => {
-       this.locationSuccess(res)
+        this.locationSuccess(res)
       }).catch(e => {
-         this.locationError(e);
+        this.locationError(e);
       })
     },
     locationSuccess(res) {
@@ -152,17 +178,21 @@ export default {
       if (res.data.country) {
         this.post.location += `, ${res.data.country}`
       }
+      this.locationLoading = false
     },
     locationError(err) {
-
+      this.$q.dialog({
+        title: 'Error',
+        message: "Could not find your location"
+      })
+      this.locationLoading = false
     }
-
   },
   mounted() {
     // this.initCamera();
   },
   beforeDestroy() {
-    if(this.hasCameraSupports) {
+    if (this.hasCameraSupports) {
       this.disableCamera();
     }
   }

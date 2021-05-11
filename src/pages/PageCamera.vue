@@ -34,7 +34,7 @@
       <div class="row justify-center q-pa-md">
         <q-input v-model="post.location" label="Location" class="col col-sm-6" dense>
           <template v-slot:append>
-            <q-btn round dense flat icon="eva-navigation-2-outline"/>
+            <q-btn round dense flat icon="eva-navigation-2-outline" @click="getLocation"/>
           </template>
         </q-input>
       </div>
@@ -131,11 +131,35 @@ export default {
     },
     disableCamera() {
       this.$refs.video.srcObject.getTracks().forEach(track => track.stop());
+    },
+    getLocation() {
+      navigator.geolocation.getCurrentPosition(position => {
+        this.getCityAndCountry(position)
+      }, err => {
+          this.locationError(err);
+      }, { timeout: 7000 })
+    },
+    getCityAndCountry(position) {
+      const apiUrl = `https://geocode.xyz/${position.coords.latitude},${position.coords.longitude}?json=1`;
+      this.$axios.get(apiUrl).then(res => {
+       this.locationSuccess(res)
+      }).catch(e => {
+         this.locationError(e);
+      })
+    },
+    locationSuccess(res) {
+      this.post.location = res.data.city;
+      if (res.data.country) {
+        this.post.location += `, ${res.data.country}`
+      }
+    },
+    locationError(err) {
+
     }
 
   },
   mounted() {
-    this.initCamera();
+    // this.initCamera();
   },
   beforeDestroy() {
     if(this.hasCameraSupports) {

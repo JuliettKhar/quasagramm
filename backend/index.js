@@ -94,16 +94,10 @@ app.post('/createPost', function (request, response) {
           date: parseInt(fields.date),
           imageUrl: `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${uploadedFile.name}?alt=media&token=${UUID}`,
         })
-        .then(() => {
-          // response.send('Post added');
-        })
-        .catch(err => {
-          console.log(err, 'createDocument')
-        })
+        .catch(err => console.log(err))
     }
 
-    // response.writeHead(303, { Connection: 'close', Location: '/' });
-    response.end();
+    response.end('Post added');
   });
 
   request.pipe(busboy);

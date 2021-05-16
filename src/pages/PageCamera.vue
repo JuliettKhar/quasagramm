@@ -58,7 +58,13 @@
         </q-input>
       </div>
       <div class="row justify-center q-mt-lg">
-        <q-btn rounded unelevated color="primary" label="Post image" />
+        <q-btn
+          rounded
+          unelevated
+          color="primary"
+          label="Post image"
+          @click="addPost"
+        />
       </div>
     </div>
   </q-page>
@@ -76,7 +82,7 @@ export default {
       post: {
         id: uid(),
         caption: "",
-        date: 0,
+        date: Date.now(),
         location: "",
         photo: null
       },
@@ -86,7 +92,7 @@ export default {
       locationLoading: false
     }
   },
-  computed:{
+  computed: {
     islocationSupported() {
       return navigator.geolocation ? true : false
     }
@@ -186,10 +192,22 @@ export default {
         message: "Could not find your location"
       })
       this.locationLoading = false
+    },
+    addPost() {
+      let formData = new FormData();
+      formData.append('id', this.post.id);
+      formData.append('caption', this.post.caption);
+      formData.append('location', this.post.location);
+      formData.append('date', this.post.date);
+      formData.append('file', this.post.photo,`${this.post.id}.png`);
+
+      this.$axios.post(`${process.env.API}/createPost`, formData)
+        .then(response => console.log(response))
+        .catch(err => console.log(err))
     }
   },
   mounted() {
-    // this.initCamera();
+    this.initCamera();
   },
   beforeDestroy() {
     if (this.hasCameraSupports) {

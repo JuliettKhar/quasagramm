@@ -6,6 +6,9 @@
 // Configuration for your app
 // https://v1.quasar.dev/quasar-cli/quasar-conf-js
 
+let LOCAL_API = 'http://localhost:3000';
+let PROD_API = 'https://quasagramm-backend.herokuapp.com'
+
 module.exports = function (/* ctx */) {
   return {
     // https://v1.quasar.dev/quasar-cli/supporting-ts
@@ -43,6 +46,9 @@ module.exports = function (/* ctx */) {
 
     // Full list of options: https://v1.quasar.dev/quasar-cli/quasar-conf-js#Property%3A-build
     build: {
+      env: {
+        API: LOCAL_API
+      },
       vueRouterMode: 'hash', // available values: 'hash', 'history'
 
       // transpile: false,

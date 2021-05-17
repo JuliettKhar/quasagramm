@@ -117,7 +117,7 @@ module.exports = function (/* ctx */) {
       workboxPluginMode: 'GenerateSW', // 'GenerateSW' or 'InjectManifest'
       workboxOptions: {}, // only for GenerateSW
       manifest: {
-        name: `Quasagramm`,
+        name: `Quasagramm - Share your experience`,
         short_name: `Quasagramm`,
         description: `A Quasar Framework app`,
         display: 'standalone',

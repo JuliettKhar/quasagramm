@@ -18,6 +18,7 @@
   },
   "devDependencies": {
     "@quasar/app": "^2.0.0",
+    "idb": "^6.1.0",
     "prettier": "2.3.0",
     "workbox-webpack-plugin": "^5.1.4"
   },

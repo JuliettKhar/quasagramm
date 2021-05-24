@@ -73,7 +73,8 @@
 </template>
 
 <script>
-import {uid} from 'quasar'
+import {uid} from 'quasar';
+import { isOnline } from "src/utils/onlineChecker";
 
 require('md-gum-polyfill');
 
@@ -95,11 +96,12 @@ export default {
     }
   },
   computed: {
-    islocationSupported() {
-      return navigator.geolocation ? true : false
-    }
+    islocationSupported: () => 'geolocation' in navigator,
+    isBackgroundSyncSupported: () => 'serviceWorker' in navigator && 'SyncManager' in window
+
   },
   methods: {
+    isOnline,
     initCamera() {
       navigator.mediaDevices.getUserMedia({
         video: true
@@ -195,18 +197,20 @@ export default {
       })
       this.locationLoading = false
     },
-    addPost() {
+    async addPost() {
       this.$q.loading.show();
+
       let formData = new FormData();
       formData.append('id', this.post.id);
       formData.append('caption', this.post.caption);
       formData.append('location', this.post.location);
       formData.append('date', this.post.date);
-      formData.append('file', this.post.photo,`${this.post.id}.png`);
+      formData.append('file', this.post.photo, `${this.post.id}.png`);
+
+      // const isOffline = await this.isOnline();
 
       this.$axios.post(`${process.env.API}/createPost`, formData)
         .then(response => {
-          console.log(response)
           this.$q.notify({
             message: 'Post created.',
             actions: [
@@ -218,13 +222,18 @@ export default {
           this.$router.push('/');
         })
         .catch(err => {
-          this.$q.dialog({
-            title: 'Error',
-            message: "Could not create post"
-          })
+          if (navigator.onLine && this.isBackgroundSyncSupported) {
+            this.$q.notify('Post created offline');
+            this.$router.push('/')
+          } else {
+            this.$q.dialog({
+              title: 'Error',
+              message: "Could not create post"
+            })
+          }
         })
-      .finally(() => this.$q.loading.hide())
-    }
+        .finally(() => this.$q.loading.hide())
+    },
   },
   mounted() {
     this.initCamera();

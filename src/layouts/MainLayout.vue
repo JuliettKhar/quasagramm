@@ -29,7 +29,9 @@
     </q-header>
 
     <q-page-container class="bg-grey-1">
-      <router-view />
+      <keep-alive :include="['PageHome']">
+        <router-view />
+      </keep-alive>
     </q-page-container>
 
     <q-footer class="bg-white" bordered>
@@ -41,6 +43,9 @@
         <div v-if="showAppInstallBanner" class="bg-primary banner-container">
           <div class="container">
             <q-banner inline-actions dense class="bg-primary text-white">
+              <template v-slot:avatar>
+                 <q-icon name="eva-camera-outline" color="white"></q-icon>
+              </template>
               <b>Install Quasagramm?</b>
 
               <template v-slot:action>

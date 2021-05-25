@@ -5,22 +5,33 @@
       enter-active-class="animated fadeIn"
       leave-active-class="animated fadeOut"
     >
-      <div v-if="showNotificationBanner" class="bg-primary banner-container">
+      <div v-if="showNotificationBanner && isPushNotificationsSupported" class="bg-primary banner-container">
         <div class="container">
           <q-banner dense class="bg-grey-3 q-mb-md">
             <template v-slot:avatar>
-            <q-icon name="eva-bell-outline" color="primary"></q-icon>
+              <q-icon name="eva-bell-outline" color="primary"></q-icon>
             </template>
-           Would you like to enable notifications?
+            Would you like to enable notifications?
 
             <template v-slot:action>
-              <q-btn flat label="Yes" @click="enableNotifications" color="primary" />
+              <q-btn
+                flat
+                label="Yes"
+                @click="enableNotifications"
+                color="primary"
+              />
               <q-btn
                 flat
                 label="Later"
-                @click="showNotificationBanner = false" color="primary"
+                @click="showNotificationBanner = false"
+                color="primary"
               />
-              <q-btn flat label="Never" @click="neverShowNotificationBanner" color="primary" />
+              <q-btn
+                flat
+                label="Never"
+                @click="neverShowNotificationBanner"
+                color="primary"
+              />
             </template>
           </q-banner>
         </div>
@@ -141,7 +152,8 @@ export default {
     }
   },
   computed: {
-    isServiceWorkerSupported: () => 'serviceWorker' in navigator
+    isServiceWorkerSupported: () => 'serviceWorker' in navigator,
+    isPushNotificationsSupported: () => 'PushManager' in window,
   },
   methods: {
     isOnline,
@@ -209,22 +221,33 @@ export default {
         });
       }
     },
-    async enableNotifications() {
-      // Hide the app provided install promotion
-      this.showAppInstallBanner = false;
-      // Show the install prompt
-      deferredPrompt.prompt();
-      // Wait for the user to respond to the prompt
-      const {outcome} = await deferredPrompt.userChoice;
-      // Optionally, send analytics event with outcome of user choice
-      if (outcome === 'accepted') {
-        this.neverShowAppInstallBanner();
-      } else {
-        console.log(2)
+    enableNotifications() {
+      if (this.isPushNotificationsSupported) {
+        Notification.requestPermission((result) => {
+          this.neverShowNotificationBanner();
+
+          if (result === 'granted') {
+            this.displayGrantedNotification();
+          }
+        })
       }
-      console.log(`User response to the install prompt: ${outcome}`);
-      // We've used the prompt, and can't use it again, throw it away
-      deferredPrompt = null;
+    },
+    displayGrantedNotification() {
+      new Notification("You're subscribed to notification", {
+        body: "Thanks for subscribing",
+        // MacOs
+        icon: "icons/apple-icon-120x120.png",
+        // Android
+        image: "icons/apple-icon-120x120.png",
+        // MacOs, Android
+        badge: "icons/apple-icon-120x120.png",
+        dir: "ltr",
+        lang: "en-US",
+        vibrate: [100, 50, 200],
+        tag: 'confirm-notification',
+        //Android
+        renotify: true
+      })
     },
     neverShowNotificationBanner() {
       this.showNotificationBanner = false;

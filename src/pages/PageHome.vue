@@ -5,7 +5,10 @@
       enter-active-class="animated fadeIn"
       leave-active-class="animated fadeOut"
     >
-      <div v-if="showNotificationBanner && isPushNotificationsSupported" class="bg-primary banner-container">
+      <div
+        v-if="showNotificationBanner && isPushNotificationsSupported"
+        class="bg-primary banner-container"
+      >
         <div class="container">
           <q-banner dense class="bg-grey-3 q-mb-md">
             <template v-slot:avatar>
@@ -141,6 +144,7 @@
 import {date} from 'quasar'
 import {openDB} from 'idb';
 import {isOnline} from "src/utils/onlineChecker";
+const qs = require('qs');
 
 export default {
   name: 'PageHome',
@@ -227,27 +231,73 @@ export default {
           this.neverShowNotificationBanner();
 
           if (result === 'granted') {
-            this.displayGrantedNotification();
+            // this.displayGrantedNotification();
+            this.checkForExistingPushSubscription();
           }
         })
       }
     },
-    displayGrantedNotification() {
-      new Notification("You're subscribed to notification", {
-        body: "Thanks for subscribing",
-        // MacOs
-        icon: "icons/apple-icon-120x120.png",
-        // Android
-        image: "icons/apple-icon-120x120.png",
-        // MacOs, Android
-        badge: "icons/apple-icon-120x120.png",
-        dir: "ltr",
-        lang: "en-US",
-        vibrate: [100, 50, 200],
-        tag: 'confirm-notification',
-        //Android
-        renotify: true
+    checkForExistingPushSubscription() {
+      if (this.isServiceWorkerSupported && this.isPushNotificationsSupported) {
+        let req;
+        navigator.serviceWorker.ready.then((swReq) => {
+          req = swReq
+          return swReq.pushManager.getSubscription();
+        }).then(sub => {
+          if (!sub) {
+            this.createPushSubscription(req);
+          }
+        })
+      }
+    },
+    createPushSubscription(swReq) {
+      const vapidPublicKey = "BPujNL--RxZkXxcBzXqBhJpeBe9qbkkZcL3ed4zDIFHOkFH69tBNsNdcxwQGvbQPrWklDQdb_vUvXXN4E0yKT3M"
+      const vapidPublicKeyConverted = this.urlBase64ToUint8Array(vapidPublicKey);
+      swReq.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: vapidPublicKeyConverted
+      }).then(newSub =>{
+        const newSubData = newSub.toJSON();
+        const newSubDataQs = qs.stringify(newSubData)
+        return this.$axios.post(`${process.env.API}/createSubscription?${newSubDataQs}`)
+      }).then(response => {
+        this.displayGrantedNotification()
+      }).catch(e => {
+        console.log(e)
       })
+    },
+    displayGrantedNotification() {
+      if (this.isServiceWorkerSupported && this.isPushNotificationsSupported) {
+        navigator.serviceWorker.ready.then((swReq) => {
+          swReq.showNotification("You're subscribed to notification", {
+            body: "Thanks for subscribing",
+            // MacOs
+            icon: "icons/apple-icon-120x120.png",
+            // Android
+            image: "icons/apple-icon-120x120.png",
+            // MacOs, Android
+            badge: "icons/apple-icon-120x120.png",
+            dir: "ltr",
+            lang: "en-US",
+            vibrate: [100, 50, 200],
+            tag: 'confirm-notification',
+            //Android
+            renotify: true,
+            actions: [
+              {
+                title: "Hello",
+                icon: "icons/apple-icon-120x120.png",
+                action: "hello"
+              },
+              {
+                title: "Goodbye",
+                icon: "icons/apple-icon-120x120.png",
+                action: "goodbye"
+              }
+            ]
+          });
+        })
+      }
     },
     neverShowNotificationBanner() {
       this.showNotificationBanner = false;
@@ -255,8 +305,22 @@ export default {
     },
     initNotificationBanner() {
       if (!this.$q.localStorage.getItem('showNotificationBanner')) {
-          this.showNotificationBanner = true;
+        this.showNotificationBanner = true;
       }
+    },
+    urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding)
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
+
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+
+      for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+      }
+      return outputArray;
     }
   },
   activated() {

@@ -45,14 +45,14 @@ if (isBackgroundSyncSupported) {
 
   self.addEventListener('fetch', (event) => {
     if (event.request.url.endsWith('createPost')) {
-       console.log(event.request.url, 'event.request.url')
       // Clone the request to ensure it's safe to read when
       // adding to the createPostQueue.
-      const promiseChain = fetch(event.request.clone()).catch((err) => {
-        return queue.pushRequest({ request: event.request });
-      });
-
+      if(!self.navigator.onLine) {
+        const promiseChain = fetch(event.request.clone()).catch((err) => {
+          return queue.pushRequest({request: event.request});
+        });
       event.waitUntil(promiseChain);
+      }
     }
   });
 }
@@ -81,3 +81,54 @@ registerRoute(
   ({ url }) => url.href.startsWith('http'),
   new StaleWhileRevalidate(),
 );
+
+//events - notifications
+self.addEventListener('notificationclick', event => {
+  const notification = event.notification;
+  const action = event.action;
+
+  if (action === 'hello') {
+    console.log(action)
+  } else if (action === 'goodbye') {
+    console.log(action)
+  } else {
+   event.waitUntil(
+     clients.matchAll().then((resClients) => {
+       console.log(resClients, 'clients')
+       const clientsUsingApp = resClients.find(client => client.visibilityState === 'visible')
+       if (clientsUsingApp) {
+         console.log(notification.data)
+         clientsUsingApp.navigate(notification.data.openUrl);
+         clientsUsingApp.focus()
+       } else {
+         clients.openWindow(notification.data.openUrl);
+       }
+     }).catch(e => {
+       console.log(e.toString())
+     })
+   )
+  }
+  // notification.close();
+});
+
+//events - push
+self.addEventListener('push', event => {
+  console.log('push', event)
+  if (event.data) {
+    const data = JSON.parse(event.data.text());
+    event.waitUntil(
+      self.registration.showNotification(data.title, {
+        body: data.body,
+        icon: 'icons/apple-icon-120x120.png',
+        badge: 'icons/apple-icon-120x120.png',
+        data: {
+          openUrl: data.openUrl,
+        }
+      }),
+    );
+  }
+});
+
+self.addEventListener('notificationclose', event => {
+  console.log('close')
+})

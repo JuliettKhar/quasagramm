@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "start:dev": "nodemon index.js",
-    "deploy": "heroku builds:create -a quasagramm-backend"
+    "deploy": "heroku builds:create -a quasagramm-backend",
+    "web-push": "web-push"
   },
   "author": "",
   "license": "ISC",
@@ -18,6 +19,7 @@
   "dependencies": {
     "express": "^4.17.1",
     "firebase-admin": "^9.8.0",
+    "web-push": "^3.4.4",
     "workbox-webpack-plugin": "^6.1.5"
   }
 }

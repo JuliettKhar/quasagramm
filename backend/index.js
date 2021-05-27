@@ -9,6 +9,7 @@ const os = require('os');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const Busboy = require('busboy');
+const webpush = require('web-push');
 
 /*
  * Config - express
@@ -27,6 +28,15 @@ admin.initializeApp({
 
 const db = admin.firestore();
 const bucket = admin.storage().bucket();
+
+/**
+ * webpush
+ */
+webpush.setVapidDetails(
+  'mailto:example@yourdomain.org',
+  'BPujNL--RxZkXxcBzXqBhJpeBe9qbkkZcL3ed4zDIFHOkFH69tBNsNdcxwQGvbQPrWklDQdb_vUvXXN4E0yKT3M', //public
+  'Rb0lz4yX8RHMN9-USqZ6-_tkBcVWOch3hUfuKh_LQXs', //private
+);
 
 /*
  * Endpoints
@@ -94,14 +104,58 @@ app.post('/createPost', function (request, response) {
           date: parseInt(fields.date),
           imageUrl: `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${uploadedFile.name}?alt=media&token=${UUID}`,
         })
-        .catch(err => console.log(err))
+        .then(() => {
+          response.end('Post added');
+          sendPushNotification();
+        })
+        .catch((err) => console.log(err));
     }
 
-    response.end('Post added');
+    function sendPushNotification() {
+      const subscriptions = [];
+      db.collection('subscriptions')
+        .get()
+        .then((snapshot) => {
+          snapshot.forEach((doc) => {
+            subscriptions.push(doc.data());
+          });
+          return subscriptions;
+        })
+        .then((subscriptions) => {
+          subscriptions.forEach((subscription) => {
+            const { endpoint, keys } = subscription;
+            const pushSubscription = { endpoint, keys };
+            const pushContent = {
+              title: 'New Quasagramm post!',
+              body: 'New Post added!',
+              openUrl: '/#/',
+            };
+
+            webpush.sendNotification(
+              pushSubscription,
+              JSON.stringify(pushContent),
+            ).catch(e => console.log(e.toString()))
+          });
+        })
+        .catch((e) => console.log(e));
+    }
   });
 
   request.pipe(busboy);
 });
+
+app.post('/createSubscription', function (request, response) {
+  response.set('Access-Control-Allow-Origin', '*');
+  db.collection('subscriptions')
+    .add(request.query)
+    .then((docRef) => {
+      response.send({
+        message: 'Subscription added',
+        postData: request.query,
+      });
+    });
+});
+
 /*
  * Listen
  */

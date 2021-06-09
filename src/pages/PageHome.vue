@@ -167,8 +167,14 @@ export default {
     async getPosts() {
       this.loadingPosts = true;
       const isOffline = await isOnline();
+      let  timestamp = '';
 
-      this.$axios.get(`${process.env.API}/posts`)
+      // add unique timestamp for the request URL for IE
+      if (this.$q.platform.is.ie) {
+        timestamp = `?timestamp=${Date.now()}`
+      }
+
+      this.$axios.get(`${process.env.API}/posts${timestamp}`)
         .then(response => {
           this.posts = response.data;
           this.loadingPosts = false;

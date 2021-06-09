@@ -121,6 +121,7 @@ self.addEventListener('push', event => {
         body: data.body,
         icon: 'icons/apple-icon-120x120.png',
         badge: 'icons/apple-icon-120x120.png',
+        image: data.imageUrl,
         data: {
           openUrl: data.openUrl,
         }

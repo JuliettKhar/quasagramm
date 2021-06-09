@@ -62,6 +62,7 @@ app.post('/createPost', function (request, response) {
   const fields = {};
   let fileData = {};
   const UUID = uuidv4();
+  let imageUrl = ''
 
   busboy.on('field', function (fieldname, val) {
     fields[fieldname] = val;
@@ -95,6 +96,8 @@ app.post('/createPost', function (request, response) {
     );
 
     function createDocument(uploadedFile) {
+      imageUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${uploadedFile.name}?alt=media&token=${UUID}`;
+
       db.collection('posts')
         .doc(fields.id)
         .set({
@@ -102,7 +105,7 @@ app.post('/createPost', function (request, response) {
           caption: fields.caption,
           location: fields.location,
           date: parseInt(fields.date),
-          imageUrl: `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${uploadedFile.name}?alt=media&token=${UUID}`,
+          imageUrl,
         })
         .then(() => {
           response.end('Post added');
@@ -129,6 +132,7 @@ app.post('/createPost', function (request, response) {
               title: 'New Quasagramm post!',
               body: 'New Post added!',
               openUrl: '/#/',
+              imageUrl
             };
 
             webpush.sendNotification(

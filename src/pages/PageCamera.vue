@@ -1,7 +1,7 @@
 <template>
   <q-page class="container-camera q-pa-md">
     <div class="camera-frame q-pa-md">
-      <video ref="video" class="full-width" autoplay v-show="!imageCaptured" />
+      <video ref="video" class="full-width" autoplay v-show="!imageCaptured" playsinline />
       <canvas
         ref="canvas"
         class="full-width"
@@ -64,6 +64,7 @@
           unelevated
           color="primary"
           label="Post image"
+          class="q-mb-lg"
           :disable="!post.caption || !post.photo"
           @click="addPost"
         />
@@ -74,7 +75,7 @@
 
 <script>
 import {uid} from 'quasar';
-import { isOnline } from "src/utils/onlineChecker";
+import {isOnline} from "src/utils/onlineChecker";
 
 require('md-gum-polyfill');
 
@@ -191,48 +192,70 @@ export default {
       this.locationLoading = false
     },
     locationError(err) {
+      const locationErrorMessage = "Could not find your location.";
+
+      if (this.$q.platform.is.safari) {
+        locationErrorMessage = `${locationErrorMessage} You might be able to fix this in System Preferences > Security & Privacy > Location Services`
+      }
       this.$q.dialog({
         title: 'Error',
-        message: "Could not find your location"
+        message: locationErrorMessage
       })
       this.locationLoading = false
     },
     async addPost() {
       this.$q.loading.show();
+      const postCreated = this.$q.localStorage.getItem('postCreated');
 
-      let formData = new FormData();
-      formData.append('id', this.post.id);
-      formData.append('caption', this.post.caption);
-      formData.append('location', this.post.location);
-      formData.append('date', this.post.date);
-      formData.append('file', this.post.photo, `${this.post.id}.png`);
+      if (this.$q.platform.is.android && !postCreated && !navigator.onLine) {
+        this.addPostError();
+         this.$q.loading.hide();
+      } else {
+        let formData = new FormData();
 
-      // const isOffline = await this.isOnline();
+        formData.append('id', this.post.id);
+        formData.append('caption', this.post.caption);
+        formData.append('location', this.post.location);
+        formData.append('date', this.post.date);
+        formData.append('file', this.post.photo, `${this.post.id}.png`);
 
-      this.$axios.post(`${process.env.API}/createPost`, formData)
-        .then(response => {
-          this.$q.notify({
-            message: 'Post created.',
-            actions: [
-              {
-                label: 'Dismiss', color: 'white'
-              }
-            ]
-          });
-          this.$router.push('/');
-        })
-        .catch(err => {
-          if (navigator.onLine && this.isBackgroundSyncSupported) {
-            this.$q.notify('Post created offline');
-            this.$router.push('/')
-          } else {
-            this.$q.dialog({
-              title: 'Error',
-              message: "Could not create post"
-            })
-          }
-        })
-        .finally(() => this.$q.loading.hide())
+        // const isOffline = await this.isOnline();
+
+        this.$axios.post(`${process.env.API}/createPost`, formData)
+          .then(response => {
+            this.$q.localStorage.set('postCreated', true)
+            this.$q.notify({
+              message: 'Post created.',
+              actions: [
+                {
+                  label: 'Dismiss', color: 'white'
+                }
+              ]
+            });
+            this.$router.push('/');
+
+            if (this.$q.platform.is.safari) {
+              setTimeout(() => {
+                window.location.href = '/'
+              }, 1000)
+            }
+          })
+          .catch(err => {
+            if (!navigator.onLine && this.isBackgroundSyncSupported && postCreated) {
+              this.$q.notify('Post created offline');
+              this.$router.push('/')
+            } else {
+              this.addPostError();
+            }
+          })
+          .finally(() => this.$q.loading.hide())
+      }
+    },
+    addPostError() {
+      this.$q.dialog({
+        title: 'Error',
+        message: "Could not create post"
+      })
     },
   },
   mounted() {

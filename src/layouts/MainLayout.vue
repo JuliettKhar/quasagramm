@@ -44,7 +44,7 @@
           <div class="container">
             <q-banner inline-actions dense class="bg-primary text-white">
               <template v-slot:avatar>
-                 <q-icon name="eva-camera-outline" color="white"></q-icon>
+                <q-icon name="eva-camera-outline" color="white"></q-icon>
               </template>
               <b>Install Quasagramm?</b>
 

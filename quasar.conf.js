@@ -7,7 +7,7 @@
 // https://v1.quasar.dev/quasar-cli/quasar-conf-js
 
 let LOCAL_API = 'http://localhost:3000';
-let PROD_API = 'https://quasagramm-backend.herokuapp.com'
+let PROD_API = ' https://quasagramm-backend.herokuapp.com'
 
 module.exports = function (/* ctx */) {
   return {
@@ -47,7 +47,7 @@ module.exports = function (/* ctx */) {
     // Full list of options: https://v1.quasar.dev/quasar-cli/quasar-conf-js#Property%3A-build
     build: {
       env: {
-        API: LOCAL_API
+        API: PROD_API
       },
       vueRouterMode: 'hash', // available values: 'hash', 'history'
 
@@ -56,7 +56,7 @@ module.exports = function (/* ctx */) {
       // Add dependencies for transpiling with Babel (Array of string/regex)
       // (from node_modules, which are by default not transpiled).
       // Applies only if "transpile" is set to true.
-      // transpileDependencies: [],
+      transpileDependencies: ['idb'],
 
       // rtl: false, // https://v1.quasar.dev/options/rtl-support
       // preloadChunks: true,

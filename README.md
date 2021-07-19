@@ -1,6 +1,13 @@
-# Quasagramm (quasagram)
+# Quasagramm
+Tyny instagram clone. Made with Quasar Framework
 
-A Quasar Framework app
+- Vue.js
+- Node.js
+- Express
+- Firebase
+- Service workers
+- Push notification
+- Background sync
 
 ## Install the dependencies
 ```bash
